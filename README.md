@@ -1,2 +1,2 @@
-# land-atlas
-This repository contains code to manage spatial data
+#Rentals Management System
+This repository integrates geographic and non-geographic attributes to organize, store, and manage rental information effectively.

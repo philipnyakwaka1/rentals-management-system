@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from uuid import uuid4
-
-for i in range(50):
-    s = str(uuid4())
-    print(len(s))
+from dotenv import load_dotenv
+import os
+load_dotenv()
+DB_ENGINE=os.getenv('DB_ENGINE')
+print(DB_ENGINE)
+print(type(DB_ENGINE))
