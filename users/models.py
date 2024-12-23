@@ -10,7 +10,7 @@ class Owner(models.Model):
     phone = models.CharField(max_length=20, name=False)
     email = models.CharField(max_length=50, null=False)
     address = models.CharField(max_length=100, null=False)
-    buiilding = models.ManyToManyField(Building, related_name='owners', null=False)
+    buiilding = models.ManyToManyField(Building, related_name='owners')
 
     class Meta:
         db_table = 'owner'
@@ -23,7 +23,7 @@ class Tenant(models.Model):
     phone = models.CharField(max_length=20, name=False)
     email = models.CharField(max_length=50, null=False)
     address = models.CharField(max_length=100, null=False)
-    building = models.ManyToManyField(Building, related_name='tenants', null=True)
+    building = models.ManyToManyField(Building, related_name='tenants')
     #contract(File)
     
     class Meta:
