@@ -11,6 +11,8 @@ class Building(models.Model):
     payment_details = models.CharField(max_length=255)
     occupancy = models.BooleanField()
     building_xy = gis_models.PointField(spatial_index=True, srid=21037)
+    #image
+    #video
 
     class Meta:
         db_table = 'building'
