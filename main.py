@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
-from django.contrib.auth.models import User
-
-print(dir(User))
+a = 'Hello'.encode('utf-8')
+print(dir(a))
+{
+    'username': 'Omina',
+    'password': 'Ominaphi1',
+    'email': 'omina@example.com'
+}

@@ -4,14 +4,19 @@ from django.contrib.auth.models import User
 
 class Profile(models.Model):
     """Define owner table"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE , related_name='owner', null=True)
-    building_coordinate = models.CharField(max_length=50, null=True)
-    phone = models.CharField(max_length=20, name=False)
-    address = models.CharField(max_length=100, null=False)
-    building = models.ManyToManyField(Building, related_name='owners')
-    #user_type
+    user = models.OneToOneField(User, on_delete=models.CASCADE , related_name='profile', null=True)
+    phone = models.CharField(max_length=20, null=True)
+    address = models.CharField(max_length=100, null=True)
+    building = models.ManyToManyField(Building, through='UserBuilding',related_name='user')
     #contract
+
+    def __str__(self):
+        return f'{self.user.username} Profile'
 
     class Meta:
         db_table = 'profile'
 
+class UserBuilding(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    building = models.ForeignKey(Building, on_delete=models.CASCADE)
+    relationship = models.CharField(max_length=6)
