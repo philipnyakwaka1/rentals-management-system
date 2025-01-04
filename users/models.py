@@ -7,7 +7,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE , related_name='profile', null=True)
     phone = models.CharField(max_length=20, null=True)
     address = models.CharField(max_length=100, null=True)
-    building = models.ManyToManyField(Building, through='UserBuilding',related_name='user')
+    buildings = models.ManyToManyField(Building, through='UserBuilding',related_name='profile')
     #contract
 
     def __str__(self):

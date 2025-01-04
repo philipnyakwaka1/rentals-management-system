@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-a = 'Hello'.encode('utf-8')
-print(dir(a))
+from django.contrib.gis.geos import Point
+
 {
-    'username': 'Omina',
-    'password': 'Ominaphi1',
-    'email': 'omina@example.com'
+    "comment": "Building in good condition", 
+    "rent" : 10000, 
+    "payment_details": "XXXX",
+    "building": "-4.3114901077730277, 36.817033766143965"
 }
+

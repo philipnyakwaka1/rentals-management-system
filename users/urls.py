@@ -6,4 +6,5 @@ urlpatterns = [
     path('', views.users_home_page, name='users-home'),
     path('register', _api_views.register_user_api, name='users-register-api'),
     path('profile', _api_views.update_user_profile_api, name='profile-update-api'),
+    path('building', _api_views.create_or_update_building_api, name='create_update-building-api')
 ]
