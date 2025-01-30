@@ -8,6 +8,7 @@ class Notice(models.Model):
     building = models.ForeignKey(Building, on_delete=models.PROTECT, related_name='notices')
     notice = models.CharField(max_length=256, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.owner.username} Notice'
@@ -22,6 +23,7 @@ class Comment(models.Model):
     building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name='comments')
     comment = models.CharField(max_length=256, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.tenant.username} Announcement'

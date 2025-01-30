@@ -1,10 +1,10 @@
 from django.urls import path
 from . import views
-from .api.v1 import views as _api_views
+from .api.v1 import views as user_api
 
 urlpatterns = [
-    path('', views.users_home_page, name='users-home'),
-    path('register', _api_views.register_user_api, name='users-register-api'),
-    path('profile', _api_views.update_user_profile_api, name='profile-update-api'),
-    path('building', _api_views.create_or_update_building_api, name='create_update-building-api')
+    path('', user_api.get_users_api, name='api-get_users'),
+    path('<int:user_pk>', user_api.get_update_user_api, name='api-update_user'),
+    path('register', user_api.register_user_api, name='api-register_users'),
+    path('profile/<int:user_pk>', user_api.get_update_profile_api, name='api-get_update_profile'),
 ]

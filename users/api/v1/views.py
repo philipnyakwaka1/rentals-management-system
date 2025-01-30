@@ -1,50 +1,73 @@
 from django.contrib.auth.models import User
-from users.serializers import UserSerializer, UserProfileSerializer, BuildingsSerializer
+from users.serializers import UserSerializer, UserProfileSerializer
+from buildings.serializers import BuildingsSerializer
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from users.models import Profile
 from buildings.models import Building
+from announcements.models import Notice, Comment
 
 
 @api_view(['PUT'])
 def register_user_api(request):
-    username = request.data.get('username')
-    user = User.objects.get(username=username)
-    if user:
-        return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'user': serializer.data}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['PATCH'])
-def update_user_profile_api(request):
-    profile = Profile.objects.get(user=request.user)
-    serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['PUT', 'PATCH'])
-def create_or_update_building_api(request):
-    if request.method == 'PUT':
-        profile = Profile.objects.get(user=request.user)
-        serializer = BuildingsSerializer(data=request.data)
+    try:
+        username = request.data.get('username')
+        user = User.objects.get(username=username)
+        return Response({'error': 'username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+    except User.DoesNotExist:
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            building = serializer.save()
-            profile.buildings.add(building, through_defaults={'relationship': 'owner'})
-            return Response(serializer.data)
+            serializer.save()
+            return Response({'user': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def get_users_api(request):
+    all_users = User.objects.all()
+    users = list(map(lambda x : {'user': {**UserSerializer(x).data, 'profile': UserProfileSerializer(x.profile).data}}, all_users))
+    return Response({'users': users})
+
+@api_view(['GET', 'PATCH'])
+def get_update_user_api(request, user_pk):
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PATCH':
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': f'{user.username} succesfully updated', 'updates': serializer.data})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        user_profile = UserProfileSerializer(user.profile).data
+        user_data = serializer.data
+        user_data['profile'] = user_profile
+        return Response({'user': user_data}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'PATCH'])
+def get_update_profile_api(request, user_pk):
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'PATCH':
-        building = Building.objects.get(pk=14)
-        if building:
-            serializer = BuildingsSerializer(building, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'message': 'Buiding succesfully updated', 'building': serializer.data}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'error': 'Building does not exists'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'profile': { **serializer.data, 'user': UserSerializer(user).data}}, status=status.HTTP_200_OK)
+        return Response({serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.method == 'GET':
+        profile_serializer = UserProfileSerializer(profile)
+        user_serializer = UserSerializer(user)
+        return Response({'user': { **user_serializer.data, 'profile': profile_serializer.data}}, status=status.HTTP_200_OK)
