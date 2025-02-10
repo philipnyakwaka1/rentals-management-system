@@ -26,6 +26,7 @@ class BuildingsSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         coord = validated_data.get('building')
+        print(coord)
         validated_data['building'] = Point(float(coord[1]), float(coord[0]))
         return Building.objects.create(**validated_data)
 

@@ -3,7 +3,6 @@ from django.contrib.gis.db import models as gis_models
 
 class Building(models.Model):
     """class to store building shapefiles and associated attributes"""
-    comment = models.CharField(max_length=255, null=True, default=None)
     county = models.CharField(max_length=255, null=True, default=None)
     district = models.CharField(max_length=255, null=True, default=None)
     rent = models.DecimalField(max_digits=8, decimal_places=2, null=True, default=None)

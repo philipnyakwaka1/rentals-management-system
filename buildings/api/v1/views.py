@@ -13,11 +13,9 @@ from django.core import serializers
 def create_query_buildings(request):
     if request.method =='GET':
         all_buildings = Building.objects.all()
-        #buildings = list(map(lambda x : BuildingsSerializer(x).data, all_buildings))
-        #return Response({'buildings': buildings})
         buildings = serializers.serialize('geojson', all_buildings)
         return Response(buildings)
-    
+
     if request.method == 'PUT':
         try:
             user = User.objects.get(pk=request.data.get('user_id'))
@@ -35,7 +33,7 @@ def create_query_buildings(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'DELETE', 'PATCH'])
 def get_update_building_api(request, building_pk):
     try:
         building = Building.objects.get(pk=building_pk)
@@ -45,6 +43,10 @@ def get_update_building_api(request, building_pk):
     if request.method == 'GET':
         serializer = BuildingsSerializer(building)
         return Response({'building': serializer.data}, status=status.HTTP_200_OK)
+
+    if request.method == 'DELETE':
+        print(building.delete())
+        return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
 
     if request.method == 'PATCH':
         serializer = BuildingsSerializer(building, data=request.data, partial=True)

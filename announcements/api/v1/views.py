@@ -19,7 +19,7 @@ def create_get_comment_api(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 def get_update_comment_api(request, comment_pk):
     if request.method == 'GET':
         try:
@@ -29,6 +29,14 @@ def get_update_comment_api(request, comment_pk):
         except Comment.DoesNotExist:
             return Response({'error': 'comment id does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
+    if request.method == 'DELETE':
+        try:
+            comment = Comment.objects.get(pk=comment_pk)
+            comment.delete()
+            return Response({'comment_id': comment_pk, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
+        except Comment.DoesNotExist:
+            return Response({'error': 'comment id does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'PATCH':
         try:
             comment =Comment.objects.get(pk=comment_pk)
@@ -61,9 +69,17 @@ def get_update_notice_api(request, notice_pk):
             notice =Notice.objects.get(pk=notice_pk)
             serializer = NoticeSerializer(notice)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except notice.DoesNotExist:
+        except Notice.DoesNotExist:
             return Response({'error': 'notice id does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
+    if request.method == 'DELETE':
+        try:
+            notice = Notice.objects.get(pk=notice_pk)
+            notice.delete()
+            return Response({'notice_id': notice_pk, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
+        except notice.DoesNotExist:
+            return Response({'error': 'notice id does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'PATCH':
         try:
             notice =Notice.objects.get(pk=notice_pk)
