@@ -76,9 +76,9 @@ python manage.py migrate
 ```
 python manage.py runserver
 ```
-### API Usage
+## API Usage
 The project includes several API endpoints for managing data.
-#### Example: PUT Data to an API Endpoint
+### Example: PUT Data to an API Endpoint
 Use the PUT method to add a building using cURL:
 ```
 curl -X PUT http://127.0.0.1:8000/api/buildings/ \
@@ -93,3 +93,34 @@ curl -X PUT http://127.0.0.1:8000/api/buildings/ \
          "building": "POINT(36.8219 -1.2921)"
      }'
 ```
+### Endpoints Overview
+* GET /api/buildings/: Retrieve all buildings in GeoJSON format.
+* PUT /api/buildings/: Add a new building.
+* GET /api/buildings/<building_pk>/: Retrieve details of a specific building.
+* PATCH /api/buildings/<building_pk>/: Update details of a specific building.
+* DELETE /api/buildings/<building_pk>/: Delete a specific building.
+## Testing
+```
+python manage.py test
+```
+## Contributing
+To contribute to the project, follow these steps:
+* Fork the repository.
+* Create a feature branch:
+```
+git checkout -b feature-name
+```
+* Commit your changes:
+```
+git commit -m "Description of the feature added"
+```
+* Push to your branch:
+```
+git push origin feature-name
+```
+* Create a pull request on GitHub.
+## Authors 
+Philip Nyakwaka - [Github](https://github.com/philipnyakwaka1) / [Twitter](https://x.com/ominaphillip18)
+
+## License
+Public Domain. No copy write protection. 
