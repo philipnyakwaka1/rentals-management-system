@@ -43,8 +43,10 @@ git clone https://github.com/philipnyakwaka1/rentals-management-system.git
 cd rentals-management-system
 ```
 #### 2. Set Up Virtual Environment
+```
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
 #### 3. Install Dependencies
 pip install -r requirements.txt
