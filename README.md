@@ -6,7 +6,7 @@ This project is a comprehensive application that manages the geographic represen
 
 ## Tech Stack
 
-- **Frontend:** HTML, CSS, JavaScript
+- **Frontend:** HTML, CSS, JavaScript, Leaflet
 - **Backend:** Python, Django
 - **Database:** PostgreSQL with PostGIS extension
 - **Version Control:** GitHub
