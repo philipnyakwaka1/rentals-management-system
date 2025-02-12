@@ -49,4 +49,47 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 #### 3. Install Dependencies
+```
 pip install -r requirements.txt
+```
+#### 4. Set Up the Database
+* Create a PostgreSQL database.
+* Update the DATABASES section in settings.py with your PostgreSQL credentials:
+```
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'your_database_name',
+        'USER': 'your_username',
+        'PASSWORD': 'your_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+```
+#### 5. Apply Migrations
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+#### 6. Run the Development Server
+```
+python manage.py runserver
+```
+### API Usage
+The project includes several API endpoints for managing data.
+#### Example: PUT Data to an API Endpoint
+Use the PUT method to add a building using cURL:
+```
+curl -X PUT http://127.0.0.1:8000/api/buildings/ \
+     -H "Content-Type: application/json" \
+     -d '{
+         "user_id": 1,
+         "county": "Nairobi",
+         "district": "Westlands",
+         "rent": 45000.00,
+         "payment_details": "Paid",
+         "occupancy": true,
+         "building": "POINT(36.8219 -1.2921)"
+     }'
+```
