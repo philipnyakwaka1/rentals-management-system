@@ -2,3 +2,5 @@
 venv
 *.sql
 *.csv
+main.js
+main.py

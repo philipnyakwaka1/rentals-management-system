@@ -71,3 +71,19 @@ def get_update_profile_api(request, user_pk):
         profile_serializer = UserProfileSerializer(profile)
         user_serializer = UserSerializer(user)
         return Response({'user': { **user_serializer.data, 'profile': profile_serializer.data}}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])    
+def user_buildings(request, user_pk):
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+    buildings = profile.buildings.all()
+    if len(buildings) != 0:
+        all_buildings = list(map(lambda x: BuildingsSerializer(x).data, buildings))
+    return Response({'user': { **UserSerializer(user).data, "buildings": all_buildings}}, status=status.HTTP_200_OK)

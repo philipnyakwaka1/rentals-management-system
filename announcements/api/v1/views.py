@@ -90,11 +90,3 @@ def get_update_notice_api(request, notice_pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET'])
-def user_comments(request):
-    pass
-
-@api_view(['GET'])
-def user_notices(request):
-    pass

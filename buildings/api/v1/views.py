@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from users.models import Profile
 from buildings.models import Building
 from buildings.serializers import BuildingsSerializer
+from announcements.serializers import CommentSerializer, NoticeSerializer
 from users.serializers import UserSerializer, UserProfileSerializer
 from django.core import serializers
 
@@ -45,7 +46,7 @@ def get_update_building_api(request, building_pk):
         return Response({'building': serializer.data}, status=status.HTTP_200_OK)
 
     if request.method == 'DELETE':
-        print(building.delete())
+        building.delete()
         return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
 
     if request.method == 'PATCH':
@@ -55,17 +56,32 @@ def get_update_building_api(request, building_pk):
             return Response({'message': 'Buiding succesfully updated', 'building': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])    
-def user_buildings(request, user_pk):
+@api_view(['GET'])
+def user_buildings(request, building_pk):
     try:
-        user = User.objects.get(pk=user_pk)
-    except User.DoesNotExist:
-        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        building = Building.objects.get(pk=building_pk)
+        user_profiles = building.profile.all()
+        users = list(map(lambda x: {'user': { **UserSerializer(x.user).data, 'profile': UserProfileSerializer(x).data}}, user_profiles))
+        return Response(users, status=status.HTTP_200_OK)
+    except Building.DoesNotExist:
+        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def building_comments(request, building_pk):
     try:
-        profile = Profile.objects.get(user=user)
-    except Profile.DoesNotExist:
-        return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    
-    buildings = profile.buildings.all()
-    all_buildings = list(map(lambda x: BuildingsSerializer(x).data, buildings))
-    return Response({'user': UserSerializer(user).data, "buildings": all_buildings}, status=status.HTTP_200_OK)
+        building = Building.objects.get(pk=building_pk)
+        comments = building.comments.all()
+        response = {'building': { **BuildingsSerializer(building).data, 'comments': list(map(lambda x: CommentSerializer(x).data, comments))}}
+        return Response(response, status=status.HTTP_200_OK)
+    except Building.DoesNotExist:
+        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def building_notices(request, building_pk):
+    try:
+        building = Building.objects.get(pk=building_pk)
+        notices = building.notices.all()
+        response = {'building': { **BuildingsSerializer(building).data, 'notices': list(map(lambda x: NoticeSerializer(x).data, notices))}}
+        return Response(response, status=status.HTTP_200_OK)
+    except Building.DoesNotExist:
+        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
