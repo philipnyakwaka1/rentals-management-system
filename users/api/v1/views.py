@@ -1,13 +1,32 @@
 from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.hashers import check_password
 from users.serializers import UserSerializer, UserProfileSerializer
 from buildings.serializers import BuildingsSerializer
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from users.models import Profile
 from buildings.models import Building
 from announcements.models import Notice, Comment
 
+
+@api_view(['POST'])
+def JWT_login_view(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    if not check_password(password, user.password):
+        return Response({'error': 'invalid login credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }, status=status.HTTP_200_OK)
 
 @api_view(['PUT'])
 def register_user_api(request):
@@ -23,6 +42,7 @@ def register_user_api(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
+@permission_classes([IsAdminUser])
 def get_users_api(request):
     all_users = User.objects.all()
     users = list(map(lambda x : {'user': {**UserSerializer(x).data, 'profile': UserProfileSerializer(x.profile).data}}, all_users))

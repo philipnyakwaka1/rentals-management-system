@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            {% block title %}RMS - manage rental information efficiently{% endblock %}
+        </title>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="{% url 'home-page' %}">Home</a>
+                <a href="{% url 'user-register' %}">Register</a>
+                <a href="{% url 'user-login' %}">Login</a>
+                <a href="{% url 'user-logout' %}">Logout</a>
+            </nav>
+        </header>
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+        <footer>
+            footer section
+        </footer>
+    </body>
+</html>
