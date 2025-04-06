@@ -1,7 +1,6 @@
 from django.test import TestCase
-from users.models import UserBuilding, Profile
+from users.models import Profile
 from django.contrib.auth.models import User
-from buildings.models import Building
 
 
 class UserProfileTestCase(TestCase):
@@ -38,9 +37,3 @@ class UserProfileTestCase(TestCase):
         user = User.objects.get(username='test_user')
         self.assertEqual(user.profile.phone, '+905345982367')
         self.assertEqual(user.profile.address, 'Yedikule, Fatih')
-
-class UserBuildingTestCase(TestCase):
-    #test many-to-many relationships, ensure a building can be associated to user through profile
-    #test deletion
-    #Test relationship field constraints: Ensure the relationship field properly stores values (e.g., enforce max_length=6).
-    pass
