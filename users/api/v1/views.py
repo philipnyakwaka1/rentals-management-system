@@ -42,7 +42,7 @@ def register_user_api(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+#@permission_classes([IsAdminUser])
 def get_users_api(request):
     all_users = User.objects.all()
     users = list(map(lambda x : {'user': {**UserSerializer(x).data, 'profile': UserProfileSerializer(x.profile).data}}, all_users))
