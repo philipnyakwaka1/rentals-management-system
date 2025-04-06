@@ -37,3 +37,9 @@ class UserProfileTestCase(TestCase):
         user = User.objects.get(username='test_user')
         self.assertEqual(user.profile.phone, '+905345982367')
         self.assertEqual(user.profile.address, 'Yedikule, Fatih')
+
+    def test_delete_profile_upon_user_deletion(self):
+        user = User.objects.get(username='test_user')
+        user.delete()
+        with self.assertRaises(Profile.DoesNotExist):
+            profile = Profile.objects.get(user=self.user)
