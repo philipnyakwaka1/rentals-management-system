@@ -33,6 +33,14 @@ class NoticeTestCase(TestCase):
         self.assertFalse(owner.notices.all().exists())
         self.assertFalse(building.notices.all().exists())
     
+    def test_delete_owner_after_delete_notice(self):
+        notice = Notice.objects.get(pk=self.owner_notice.pk)
+        notice.delete()
+        owner = User.objects.get(username='owner')
+        owner.delete()
+        with self.assertRaises(User.DoesNotExist):
+            owner = User.objects.get(username='owner')
+    
     def test_update_notice(self):
         notice = Notice.objects.get(pk=self.owner_notice.pk)
         notice.notice = 'payment deadline has been extended by one week'
