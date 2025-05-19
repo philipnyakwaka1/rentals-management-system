@@ -41,13 +41,21 @@ class NoticeTestCase(TestCase):
         with self.assertRaises(User.DoesNotExist):
             owner = User.objects.get(username='owner')
     
+    def test_delete_building_after_delete_notice(self):
+        notice = Notice.objects.get(pk=self.owner_notice.pk)
+        notice.delete()
+        building = Building.objects.get(pk=self.building.pk)
+        building.delete()
+        with self.assertRaises(Building.DoesNotExist):
+            building = Building.objects.get(pk=self.building.pk)
+    
     def test_update_notice(self):
         notice = Notice.objects.get(pk=self.owner_notice.pk)
         notice.notice = 'payment deadline has been extended by one week'
         notice.save()
-        self.assertTrue(self.owner_notice.created_at == notice.created_at)
-        self.assertTrue(notice.updated_at > self.owner_notice.updated_at)
-        self.assertTrue(notice.notice != self.owner_notice.notice)
+        self.assertEqual(self.owner_notice.created_at, notice.created_at)
+        self.assertGreater(notice.updated_at, self.owner_notice.updated_at)
+        self.assertNotEqual(notice.notice, self.owner_notice.notice)
         
 
 class CommentTestCase(TestCase):
@@ -74,6 +82,6 @@ class CommentTestCase(TestCase):
         comment = Comment.objects.get(pk=self.tenant_comment.pk)
         comment.comment = 'The roof has been fixed. All good.'
         comment.save()
-        self.assertTrue(self.tenant_comment.created_at == comment.created_at)
-        self.assertTrue(comment.updated_at > self.tenant_comment.updated_at)
-        self.assertTrue(comment.comment != self.tenant_comment.comment)
+        self.assertEqual(self.tenant_comment.created_at, comment.created_at)
+        self.assertGreater(comment.updated_at, self.tenant_comment.updated_at)
+        self.assertNotEqual(comment.comment, self.tenant_comment.comment)

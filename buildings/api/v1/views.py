@@ -8,14 +8,27 @@ from buildings.serializers import BuildingsSerializer
 from announcements.serializers import CommentSerializer, NoticeSerializer
 from users.serializers import UserSerializer, UserProfileSerializer
 from django.core import serializers
-
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.decorators import permission_classes
+from buildings.pagination import CustomPaginator
+from django.db.models.deletion import ProtectedError
 
 @api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def create_query_buildings(request):
     if request.method =='GET':
         all_buildings = Building.objects.all()
-        buildings = serializers.serialize('geojson', all_buildings)
-        return Response(buildings)
+        geojson = request.query_params.get('geojson') == 'true'
+        if geojson:
+            buildings = serializers.serialize('geojson', all_buildings)
+            return Response(buildings)
+        
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_buildings, request)
+        buildings = list(map(lambda x: serializers.serialize('geojson', [x]), paginated_queryset))
+        #serializer = BuildingsSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(buildings)
+
 
     if request.method == 'PUT':
         try:
@@ -35,6 +48,7 @@ def create_query_buildings(request):
 
 
 @api_view(['GET', 'DELETE', 'PATCH'])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def get_update_building_api(request, building_pk):
     try:
         building = Building.objects.get(pk=building_pk)
@@ -46,8 +60,11 @@ def get_update_building_api(request, building_pk):
         return Response({'building': serializer.data}, status=status.HTTP_200_OK)
 
     if request.method == 'DELETE':
-        building.delete()
-        return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
+        try:
+            building.delete()
+            return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
+        except ProtectedError:
+            return Response('building has an unresolved notice', status=status.HTTP_409_CONFLICT)
 
     if request.method == 'PATCH':
         serializer = BuildingsSerializer(building, data=request.data, partial=True)
@@ -57,31 +74,40 @@ def get_update_building_api(request, building_pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-def user_buildings(request, building_pk):
+@permission_classes([IsAuthenticatedOrReadOnly])
+def building_users(request, building_pk):
     try:
         building = Building.objects.get(pk=building_pk)
         user_profiles = building.profile.all()
-        users = list(map(lambda x: {'user': { **UserSerializer(x.user).data, 'profile': UserProfileSerializer(x).data}}, user_profiles))
-        return Response(users, status=status.HTTP_200_OK)
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(user_profiles, request)
+        users = list(map(lambda x: {'user': { **UserSerializer(x.user).data, 'profile': UserProfileSerializer(x).data}}, paginated_queryset))
+        return paginator.get_paginated_response(users)
     except Building.DoesNotExist:
         return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def building_comments(request, building_pk):
     try:
         building = Building.objects.get(pk=building_pk)
-        comments = building.comments.all()
-        response = {'building': { **BuildingsSerializer(building).data, 'comments': list(map(lambda x: CommentSerializer(x).data, comments))}}
-        return Response(response, status=status.HTTP_200_OK)
+        all_comments = building.comments.all()
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_comments, request)
+        comments = {'building': { **BuildingsSerializer(building).data, 'comments': list(map(lambda x: CommentSerializer(x).data, paginated_queryset))}}
+        return paginator.get_paginated_response(comments)
     except Building.DoesNotExist:
         return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def building_notices(request, building_pk):
     try:
         building = Building.objects.get(pk=building_pk)
-        notices = building.notices.all()
-        response = {'building': { **BuildingsSerializer(building).data, 'notices': list(map(lambda x: NoticeSerializer(x).data, notices))}}
-        return Response(response, status=status.HTTP_200_OK)
+        all_notices = building.notices.all()
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_notices, request)
+        notices = {'building': { **BuildingsSerializer(building).data, 'notices': list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))}}
+        return paginator.get_paginated_response(notices)
     except Building.DoesNotExist:
         return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from pathlib import Path
+from datetime import timedelta
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -142,5 +143,7 @@ REST_FRAMEWORK = {
     ]
 }
 SIMPLE_JWT = {
-    
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
 }

@@ -18,8 +18,12 @@ class BuildingsSerializer(serializers.ModelSerializer):
     
     def validate_building(self, value):
         try:
+            if ',' not in value:
+                raise ValueError()
             coord = value.replace(" ","")
             coordinates = coord.split(',')
+            if len(coordinates) != 2:
+                raise ValueError()
             return tuple(map(lambda x : float(x), coordinates))
         except Exception as e:
             raise serializers.ValidationError("Coordinate format cannot be parsed. The coordinate should be two floats values separated by a comma.")

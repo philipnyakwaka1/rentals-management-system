@@ -50,4 +50,13 @@ class UserBuildingTestCase(TestCase):
         with self.assertRaises(UserBuilding.DoesNotExist):
             building = UserBuilding.objects.get(building=building_cache)
         
+    def test_create_update_time(self):
+        last_update = self.building1.updated_at
+        created_at = self.building1.created_at
+        self.building1.district = 'Fatih'
+        self.building1.save()
+        self.assertNotEqual(self.building1.updated_at, last_update)
+        self.assertEqual(self.building1.created_at, created_at)
+        self.assertGreater(self.building1.updated_at, last_update)
+        
         
