@@ -8,7 +8,7 @@ from buildings.serializers import BuildingsSerializer
 from announcements.serializers import CommentSerializer, NoticeSerializer
 from users.serializers import UserSerializer, UserProfileSerializer
 from django.core import serializers
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.decorators import permission_classes
 from buildings.pagination import CustomPaginator
 from django.db.models.deletion import ProtectedError
@@ -26,7 +26,6 @@ def create_query_buildings(request):
         paginator = CustomPaginator()
         paginated_queryset = paginator.paginate_queryset(all_buildings, request)
         buildings = list(map(lambda x: serializers.serialize('geojson', [x]), paginated_queryset))
-        #serializer = BuildingsSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(buildings)
 
 
@@ -46,6 +45,24 @@ def create_query_buildings(request):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def add_building_profile(request, building_pk):
+    try:
+        building = Building.objects.get(pk=building_pk)
+    except Building.DoesNotExist:
+        return  Response({'error': 'building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if 'user_id' in request.data and 'relationship' in request.data:
+        try:
+            user = User.objects.get(pk=request.data.get('user_id'))
+        except User.DoesNotExist:
+            return  Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        if user.profile:
+            user.profile.buildings.add(building, through_defaults={'relationship': request.data.get('relationship')})
+            return Response({'message': f'profile with user id {user.pk} successful added to building id {building.pk}'}, status=status.HTTP_200_OK)
+        return Response({'error': 'user profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'error': 'must provide user id and relationship to building'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'DELETE', 'PATCH'])
 @permission_classes([IsAuthenticatedOrReadOnly])
@@ -56,8 +73,8 @@ def get_update_building_api(request, building_pk):
         return Response({'error': 'building does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = BuildingsSerializer(building)
-        return Response({'building': serializer.data}, status=status.HTTP_200_OK)
+        data = serializers.serialize('geojson', [building])
+        return Response(data, status=status.HTTP_200_OK)
 
     if request.method == 'DELETE':
         try:
@@ -94,7 +111,7 @@ def building_comments(request, building_pk):
         all_comments = building.comments.all()
         paginator = CustomPaginator()
         paginated_queryset = paginator.paginate_queryset(all_comments, request)
-        comments = {'building': { **BuildingsSerializer(building).data, 'comments': list(map(lambda x: CommentSerializer(x).data, paginated_queryset))}}
+        comments = list(map(lambda x: CommentSerializer(x).data, paginated_queryset))
         return paginator.get_paginated_response(comments)
     except Building.DoesNotExist:
         return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
@@ -107,7 +124,7 @@ def building_notices(request, building_pk):
         all_notices = building.notices.all()
         paginator = CustomPaginator()
         paginated_queryset = paginator.paginate_queryset(all_notices, request)
-        notices = {'building': { **BuildingsSerializer(building).data, 'notices': list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))}}
+        notices = list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))
         return paginator.get_paginated_response(notices)
     except Building.DoesNotExist:
         return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
