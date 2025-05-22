@@ -81,7 +81,7 @@ def get_update_building_api(request, building_pk):
             building.delete()
             return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
         except ProtectedError:
-            return Response('building has an unresolved notice', status=status.HTTP_409_CONFLICT)
+            return Response({'error': 'building has an unresolved notice'}, status=status.HTTP_409_CONFLICT)
 
     if request.method == 'PATCH':
         serializer = BuildingsSerializer(building, data=request.data, partial=True)

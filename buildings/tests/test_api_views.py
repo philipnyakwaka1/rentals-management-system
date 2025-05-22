@@ -132,4 +132,27 @@ class TestBuildings(APITestCase):
         print(response.json())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()['results']), 2)
+    
+    def test_delete_building(self):
+        """
+        test for unresolved notices, both in building and user deletion. Bye!
+        """
+        building = Building.objects.get(pk=self.__class__.id)
+        notice = Notice.objects.create(owner=self.user1, building=building, notice='rent is due')
+        response = self.client.delete(self.get_update_url())
+        self.assertEqual(response.status_code, 401)
+        response = self.client.delete(self.get_update_url(), headers={'Authorization': f'Bearer {self.access_token}'})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['error'], 'building has an unresolved notice')
+        notice.delete()
+        response = self.client.delete(self.get_update_url(), headers={'Authorization': f'Bearer {self.access_token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'succesfully deleted')
+        response = self.client.get(self.get_update_url())
+        self.assertEqual(response.status_code, 404)
+        response = self.client.delete(self.get_update_url(), headers={'Authorization': f'Bearer {self.access_token}'})
+        self.assertEqual(response.status_code, 404)
+
+
+
         
