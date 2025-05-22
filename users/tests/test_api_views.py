@@ -2,6 +2,9 @@ from rest_framework.test import APITestCase, APIClient
 from users.api.v1 import views
 from django.urls import reverse
 from django.contrib.auth.models import User
+from announcements.models import Notice
+from buildings.models import Building
+from buildings.api.v1 import views as building_views
 import math
 
 
@@ -152,7 +155,75 @@ class TestSpecificUserEndpoint(APITestCase):
         self.assertEqual(normal_user_response.status_code, 403)
         admin_response = self.client.get(reverse('api-update_user', args=[user_2_id]), headers={'Authorization': f'Bearer {self.admin_token}'})
         self.assertEqual(admin_response.status_code, 200)
+    
+    def test_update_user(self):
+        response = self.client.patch(reverse('api-update_user', args=[self.__class__.user_id]), data={'first_name': 'updated_fn'},headers={'Authorization': f'Bearer {self.normal_token}'})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse('api-update_user', args=[self.__class__.user_id]), headers={'Authorization': f'Bearer {self.normal_token}'})
+        self.assertEqual(response.json()['first_name'], 'updated_fn')
+
+    def test_delete_user(self):
+        user = User.objects.get(pk=self.__class__.user_id)
+        building = self.client.put(reverse('api-create_query_building'), data={'user_id': user.pk, 'building': '-4.5, 33.7'},  headers={'Authorization': f'Bearer {self.normal_token}'})
+        building = Building.objects.get(pk=building.json()['id'])
+        notice = Notice.objects.create(owner=user, building=building, notice='rent is due')
+        response = self.client.delete(reverse('api-update_user', args=[self.__class__.user_id]), headers={'Authorization': f'Bearer {self.normal_token}'})
+        self.assertEqual(response.status_code, 409)
+        notice.delete()
+        response = self.client.delete(reverse('api-update_user', args=[self.__class__.user_id]), headers={'Authorization': f'Bearer {self.normal_token}'})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.delete(reverse('api-update_user', args=[self.__class__.user_id]), headers={'Authorization': f'Bearer {self.admin_token}'})
+        self.assertEqual(response.status_code, 404)
+        response = self.client.get(reverse('api-update_user', args=[self.__class__.user_id]), headers={'Authorization': f'Bearer {self.admin_token}'})
+        self.assertEqual(response.status_code, 404)
 
 
-        
+class TestUserProfile(APITestCase):
+    
+    @classmethod
+    def setUpTestData(cls):
+        register_user = APIClient().put(reverse('api-register_users'), data={'username': 'test_user', 'password': 'RDngdgssv@345'})
+        login_user = APIClient().post(reverse('JWT-login_view'), data={'username': 'test_user', 'password': 'RDngdgssv@345'})
+        cls.access_token = login_user.json().get('access')
+        cls.user_id = register_user.json().get('id')
+        cls.profile_url = reverse('api-get_update_profile', args=[cls.user_id])
+        cls.profile_buildings_url = reverse('api-user_buildings', args=[cls.user_id])
+        cls.buildings_url = reverse('api-create_query_building')
+    
+    def test_get_another_user_profile(self):
+        response = self.client.get(reverse('api-get_update_profile', args=[self.__class__.user_id + 1]), headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 403)
+    
+    def test_get_user_profile(self):
+        response = self.client.get(self.__class__.profile_url)
+        self.assertEqual(response.status_code, 401)
+        response = self.client.get(self.__class__.profile_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['user']['id'], self.__class__.user_id)
+        self.assertTrue(response.json()['user']['profile'] is not None)
 
+    def test_update_user_profile(self):
+        response = self.client.patch(self.__class__.profile_url, data={'phone': '05XX', 'address': 'Jean Deux Park'}, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(self.__class__.profile_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['user']['profile']['phone'], '05XX')
+        self.assertEqual(response.json()['user']['profile']['address'], 'Jean Deux Park')
+    
+    def test_delete_user_profile(self):
+        response = self.client.delete(self.__class__.profile_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(self.__class__.profile_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()['error'], 'profile does not exist')
+    
+    def test_user_buildings(self):
+         response = self.client.get(self.__class__.profile_buildings_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+         self.assertEqual(response.status_code, 200)
+         self.assertEqual(len(response.json()['results']), 0)
+         building1 = self.client.put(self.__class__.buildings_url, data={'user_id': self.__class__.user_id, 'building': '-4.5, 33.7'},  headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+         building2 = self.client.put(self.__class__.buildings_url, data={'user_id': self.__class__.user_id, 'building': '-2.6, 34.1'},  headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+         response = self.client.get(self.__class__.profile_buildings_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
+         self.assertEqual(response.status_code, 200)
+         self.assertEqual(len(response.json()['results']), 2)
+    

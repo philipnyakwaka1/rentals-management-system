@@ -115,12 +115,8 @@ def get_update_delete_user_api(request, user_pk):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def get_update_delete_profile_api(request, user_pk):
-    try:
-        reverse('api-update_user', args=[user_pk])
-    except exceptions.NoReverseMatch:
-        return Response({'error': 'invalid url'}, status=status.HTTP_400_BAD_REQUEST)
     if request.user.pk != user_pk:
-        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_403_FORBIDDEN)
     try:
         user = User.objects.get(pk=user_pk)
     except User.DoesNotExist:
@@ -151,7 +147,7 @@ def get_update_delete_profile_api(request, user_pk):
 @permission_classes([IsAuthenticated])    
 def user_buildings(request, user_pk):
     if request.user.pk != user_pk:
-        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_403_FORBIDDEN)
     try:
         user = User.objects.get(pk=user_pk)
     except User.DoesNotExist:
@@ -162,6 +158,7 @@ def user_buildings(request, user_pk):
         return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
     buildings = profile.buildings.all()
-    if len(buildings) != 0:
-        all_buildings = list(map(lambda x: BuildingsSerializer(x).data, buildings))
-    return Response({'user': { **UserSerializer(user).data, "buildings": all_buildings}}, status=status.HTTP_200_OK)
+    paginator = CustomPaginator()
+    paginated_queryset = paginator.paginate_queryset(buildings, request)
+    all_buildings = list(map(lambda x: BuildingsSerializer(x).data, paginated_queryset))
+    return paginator.get_paginated_response(all_buildings)
