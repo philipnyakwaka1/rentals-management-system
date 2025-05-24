@@ -23,7 +23,7 @@ urlpatterns = [
     path('api/v1/users/', include('users.api.v1.urls')),
     path('api/v1/announcements/', include('announcements.api.v1.urls')),
     path('api/v1/building/', include('buildings.api.v1.urls')),
-    path('', include('users.urls')),
-    path('user/', include('users.urls')),
-    path('announcements/', include('announcements.urls'))
+    # path('', include('users.urls')),
+    # path('user/', include('users.urls')),
+    # path('announcements/', include('announcements.urls'))
 ]

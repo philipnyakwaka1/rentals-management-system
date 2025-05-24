@@ -7,7 +7,7 @@ from buildings.models import Building
 class NoticeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notice
-        fields = ['owner', 'building', 'notice', 'created_at', 'updated_at']
+        fields = ['pk', 'owner', 'building', 'notice', 'created_at', 'updated_at']
         extra_kwargs = {'created_at': {'read_only': True}, 'updated_at': {'read_only': True}}
 
     def update(self, instance, validated_data):
