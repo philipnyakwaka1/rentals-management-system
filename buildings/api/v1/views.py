@@ -12,6 +12,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from rest_framework.decorators import permission_classes
 from buildings.pagination import CustomPaginator
 from django.db.models.deletion import ProtectedError
+from users.models import UserBuilding
+from rest_framework.exceptions import PermissionDenied
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticatedOrReadOnly])
@@ -42,16 +44,28 @@ def create_query_buildings(request):
         if serializer.is_valid():
             building = serializer.save()
             profile.buildings.add(building, through_defaults={'relationship': 'owner'})
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def add_building_profile(request, building_pk):
+
+    def check_permission(building, user):
+        try:
+            user_building = UserBuilding.objects.get(profile=user.profile, building=building)
+            if user_building.relationship != 'owner':
+                raise PermissionDenied('user does not have permission to modify this building')
+        except UserBuilding.DoesNotExist:
+            raise PermissionDenied('user does not have permission to modify this building, profile not linked to building')
+    
     try:
         building = Building.objects.get(pk=building_pk)
+        check_permission(building, request.user)
     except Building.DoesNotExist:
         return  Response({'error': 'building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
     
     if 'user_id' in request.data and 'relationship' in request.data:
         try:
@@ -67,6 +81,15 @@ def add_building_profile(request, building_pk):
 @api_view(['GET', 'DELETE', 'PATCH'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def get_update_building_api(request, building_pk):
+
+    def check_permission(building, user):
+        try:
+            user_building = UserBuilding.objects.get(profile=user.profile, building=building)
+            if user_building.relationship != 'owner':
+                raise PermissionDenied('user does not have permission to modify this building')
+        except UserBuilding.DoesNotExist:
+            raise PermissionDenied('user profile is not linked to the building')
+
     try:
         building = Building.objects.get(pk=building_pk)
     except Building.DoesNotExist:
@@ -78,17 +101,24 @@ def get_update_building_api(request, building_pk):
 
     if request.method == 'DELETE':
         try:
+            check_permission(building, request.user)
             building.delete()
             return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
-        except ProtectedError:
+        except ProtectedError as e:
             return Response({'error': 'building has an unresolved notice'}, status=status.HTTP_409_CONFLICT)
+        except PermissionDenied as e:
+            return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'PATCH':
-        serializer = BuildingsSerializer(building, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Buiding succesfully updated', 'building': serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            check_permission(building, request.user)
+            serializer = BuildingsSerializer(building, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Buiding succesfully updated', 'building': serializer.data}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionDenied as e:
+            return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])

@@ -7,7 +7,7 @@ class BuildingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Building
         fields = '__all__'
-        extra_kwargs = {'user_id': {'read_only': True}}
+        extra_kwargs = {'user_id': {'read_only': True}, 'created_at': {'read_only': True}, 'updated_at': {'read_only': True}}
     
     def validate_user_id(self, value):
         try:
