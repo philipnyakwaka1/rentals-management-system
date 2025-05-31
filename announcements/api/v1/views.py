@@ -10,21 +10,6 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from announcements.pagination import CustomPaginator
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 
-
-"""
-API VIEWS TESTS
-====================
-create comment only is building tenant
-create notice only if building owner
-access notice only if building owner or building tenant
-
-create comment building id/ user id does not exists
-create notice building id/ user id does not exist
-DRF serializer.is_valid() should raise some error
-================================
-
-"""
-
 @api_view(['GET', 'PUT'])
 def create_get_comment_api(request):
 

@@ -236,7 +236,7 @@ class TestNotices(APITestCase):
     def test_get_unexisting_notice(self):
         response = self.client.get(reverse('api-get_update_notice', args=[self.notice.pk + 1]), headers={'Authorization': f'Bearer {self.owner_token}'})
         self.assertEqual(response.status_code, 404)
-    
+
     def test_update_notice_unauthenticated_user(self):
         response = self.client.patch(self.get_update_delete_urls, data={'notice': 'edited notice'})
         self.assertEqual(response.status_code, 401)
