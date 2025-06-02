@@ -10,6 +10,11 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from announcements.pagination import CustomPaginator
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 
+"""
+TO DOs
+Implement endpoint to get all notices/comments belonging to a particular user
+"""
+
 @api_view(['GET', 'PUT'])
 def create_get_comment_api(request):
 

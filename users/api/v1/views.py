@@ -14,6 +14,14 @@ from announcements.models import Notice, Comment
 from users.pagination import CustomPaginator
 from django.urls import reverse, exceptions
 from django.db.models.deletion import ProtectedError
+from rest_framework.exceptions import PermissionDenied
+
+
+
+def check_permission(request, user_pk):
+    if not IsAdminUser().has_permission(request, None):
+        if request.user.pk != user_pk:
+            raise PermissionDenied('user not authorized to perform this action')
 
 @api_view(['PUT'])
 def register_user_api(request):
@@ -83,12 +91,13 @@ def get_users_api(request):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def get_update_delete_user_api(request, user_pk):
-    if request.user.pk != user_pk and not request.user.is_staff:
-        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_403_FORBIDDEN)
     try:
+        check_permission(request, user_pk)
         user = User.objects.get(pk=user_pk)
     except User.DoesNotExist:
         return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
     
     if request.method == 'DELETE':
         user_id = user.pk
@@ -115,16 +124,16 @@ def get_update_delete_user_api(request, user_pk):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def get_update_delete_profile_api(request, user_pk):
-    if request.user.pk != user_pk:
-        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_403_FORBIDDEN)
     try:
+        check_permission(request, user_pk)
         user = User.objects.get(pk=user_pk)
+        profile = Profile.objects.get(user=user)
     except User.DoesNotExist:
         return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    try:
-        profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
         return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'DELETE':
         user_id = profile.user.pk
@@ -146,16 +155,16 @@ def get_update_delete_profile_api(request, user_pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])    
 def user_buildings(request, user_pk):
-    if request.user.pk != user_pk:
-        return Response({'error': 'user not authorized to perform this action'}, status=status.HTTP_403_FORBIDDEN)
     try:
+        check_permission(request, user_pk)
         user = User.objects.get(pk=user_pk)
+        profile = Profile.objects.get(user=user)
     except User.DoesNotExist:
         return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    try:
-        profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
         return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
     
     buildings = profile.buildings.all()
     paginator = CustomPaginator()

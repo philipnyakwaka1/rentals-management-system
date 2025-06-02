@@ -19,17 +19,9 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 Attention
 ===============
 
-Tests
-cannot create a building for another user unless admin
-cannot create building if user or user.profile is None
-only tenants or owners can querry all building notices or comments
 unauthenticated_users_can only access building owners, not tenants
-tenants and owners can access both building tenants and owners
 
-----Adding profile to building------
-only admin or owner can add profile to a building
-you cannot add a profile that already exists
-you should delete building profile link
+
 """
 
 def check_permission_create_building(request, user_id):
