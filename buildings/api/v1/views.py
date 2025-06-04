@@ -79,7 +79,7 @@ def create_query_buildings(request):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def add_building_profile(request, building_pk):
+def add_building_profile(request, building_id):
 
     def validate_add_profile(user,building):
         try:
@@ -89,7 +89,7 @@ def add_building_profile(request, building_pk):
             pass
 
     try:
-        building = Building.objects.get(pk=building_pk)
+        building = Building.objects.get(pk=building_id)
         check_permission_modify_profile(building, request)
     except Building.DoesNotExist:
         return  Response({'error': 'building does not exist'}, status=status.HTTP_404_NOT_FOUND)
@@ -113,9 +113,9 @@ def add_building_profile(request, building_pk):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_building_profile(request, building_pk, user_id):
+def delete_building_profile(request, building_id, user_id):
     try:
-        building = Building.objects.get(pk=building_pk)
+        building = Building.objects.get(pk=building_id)
         check_permission_modify_profile(building, request)
         user = User.objects.get(pk=user_id)
         owners = UserBuilding.objects.filter(relationship='owner')
@@ -137,7 +137,7 @@ def delete_building_profile(request, building_pk, user_id):
 
 @api_view(['GET', 'DELETE', 'PATCH'])
 @permission_classes([IsAuthenticatedOrReadOnly])
-def get_update_building_api(request, building_pk):
+def get_update_building_api(request, building_id):
 
     def check_permission(building, user):
         try:
@@ -149,7 +149,7 @@ def get_update_building_api(request, building_pk):
             raise PermissionDenied('user profile is not linked to the building')
 
     try:
-        building = Building.objects.get(pk=building_pk)
+        building = Building.objects.get(pk=building_id)
     except Building.DoesNotExist:
         return Response({'error': 'building does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -161,7 +161,7 @@ def get_update_building_api(request, building_pk):
         try:
             check_permission(building, request.user)
             building.delete()
-            return Response({'building_id': building_pk, 'status': 'succesfully deleted'})
+            return Response({'building_id': building_id, 'status': 'succesfully deleted'})
         except ProtectedError as e:
             return Response({'error': 'building has an unresolved notice'}, status=status.HTTP_409_CONFLICT)
         except PermissionDenied as e:
@@ -180,7 +180,7 @@ def get_update_building_api(request, building_pk):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def building_users(request, building_pk):
+def building_users(request, building_id):
     def paginate_data(data):
         paginator = CustomPaginator()
         paginated_queryset = paginator.paginate_queryset(data, request)
@@ -188,7 +188,7 @@ def building_users(request, building_pk):
         return (paginator, users)
     
     try:
-        building = Building.objects.get(pk=building_pk)
+        building = Building.objects.get(pk=building_id)
         check_permission_access_linked_data(request, building)
         query_param = request.query_params.get('relationship')
         linked_profiles = UserBuilding.objects.filter(building=building)
@@ -204,33 +204,33 @@ def building_users(request, building_pk):
         return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def building_comments(request, building_pk):
-    try:
-        building = Building.objects.get(pk=building_pk)
-        check_permission_access_linked_data(request, building)
-        all_comments = building.comments.all()
-        paginator = CustomPaginator()
-        paginated_queryset = paginator.paginate_queryset(all_comments, request)
-        comments = list(map(lambda x: CommentSerializer(x).data, paginated_queryset))
-        return paginator.get_paginated_response(comments)
-    except Building.DoesNotExist:
-        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    except PermissionDenied as e:
-        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+@permission_classes([IsAuthenticated])    
+def user_buildings(request, user_pk):
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def building_notices(request, building_pk):
-    try:
-        building = Building.objects.get(pk=building_pk)
-        check_permission_access_linked_data(request, building)
-        all_notices = building.notices.all()
+    def paginate_buildings(data):
         paginator = CustomPaginator()
-        paginated_queryset = paginator.paginate_queryset(all_notices, request)
-        notices = list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))
-        return paginator.get_paginated_response(notices)
-    except Building.DoesNotExist:
-        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        paginated_queryset = paginator.paginate_queryset(data, request)
+        all_buildings = list(map(lambda x: Building(x.building).data, paginated_queryset))
+        return (paginator, all_buildings)
+
+    try:
+        check_permission_access_linked_data(request, user_pk)
+        user = User.objects.get(pk=user_pk)
+        profile = Profile.objects.get(user=user)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except Profile.DoesNotExist:
+        return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
     except PermissionDenied as e:
         return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+    
+    category = request.query_params.get('category')
+    if category not in ['owner', 'tenant']:
+        return Response(
+            {'error': "Missing or invalid 'category' query parameter. Expected 'owned' or 'rented'."},
+            status=status.HTTP_400_BAD_REQUEST)
+    
+    buildings = UserBuilding.objects.filter(profile=profile, relationship=category)
+    response = paginate_buildings(buildings)
+    return response[0].get_paginated_response(response[1])
+        

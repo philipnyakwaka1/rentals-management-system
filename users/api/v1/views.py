@@ -152,22 +152,3 @@ def get_update_delete_profile_api(request, user_pk):
         user_serializer = UserSerializer(user)
         return Response({'user': { **user_serializer.data, 'profile': profile_serializer.data}}, status=status.HTTP_200_OK)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])    
-def user_buildings(request, user_pk):
-    try:
-        check_permission(request, user_pk)
-        user = User.objects.get(pk=user_pk)
-        profile = Profile.objects.get(user=user)
-    except User.DoesNotExist:
-        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    except Profile.DoesNotExist:
-        return Response({'error': 'profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    except PermissionDenied as e:
-        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
-    
-    buildings = profile.buildings.all()
-    paginator = CustomPaginator()
-    paginated_queryset = paginator.paginate_queryset(buildings, request)
-    all_buildings = list(map(lambda x: BuildingsSerializer(x).data, paginated_queryset))
-    return paginator.get_paginated_response(all_buildings)

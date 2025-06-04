@@ -31,16 +31,6 @@ class TestBuildings(APITestCase):
         self.building = Building.objects.get(pk=self.building_id)
         self.tenant.profile.buildings.add(self.building, through_defaults={'relationship': 'tenant'})
     
-    def create_building_comments(self):
-        comment1 = Comment.objects.create(tenant=self.tenant, building=self.building, comment='leaking roof')
-        comment2 = Comment.objects.create(tenant=self.tenant, building=self.building, comment='door knob is broken')
-        return (comment1, comment2)
-
-    def create_building_notices(self):
-        notice1 = Notice.objects.create(owner=self.owner, building=self.building, notice='rent is due')
-        notice2 = Notice.objects.create(owner=self.owner, building=self.building, notice='you exhausted your deposit')
-        return (notice1, notice2)
-    
     def get_update_building_url(self):
         if self.building_id is None:
             raise ValueError('building id not yet set')
@@ -60,16 +50,6 @@ class TestBuildings(APITestCase):
         if self.building_id is None:
             raise ValueError('building id not set')
         return reverse('api-delete_building_profile', args=[self.building_id, self.tenant.pk])
-    
-    def get_building_comments_url(self):
-        if self.building_id is None:
-            raise ValueError('building id not set')
-        return reverse('api-building_comments', args=[self.building_id])
-    
-    def get_building_notices_url(self):
-        if self.building_id is None:
-            raise ValueError('building id not set')
-        return reverse('api-building_notices', args=[self.building_id])
     
     def test_get_building_unauthenticated_user(self):
         response = self.client.get(self.get_update_building_url())
@@ -355,86 +335,6 @@ class TestBuildings(APITestCase):
         user_building = UserBuilding.objects.get(profile=self.owner.profile, building=self.building)
         self.assertEqual(self.owner.profile, user_building.profile)
     
-    def test_get_all_comment_unauthenticated_user(self):
-        comments = self.create_building_comments()
-        response = self.client.get(self.get_building_comments_url())
-        self.assertEqual(response.status_code, 401)
-
-    def test_get_all_comment_user_not_linked_to_building(self):
-        comments = self.create_building_comments()
-        response = self.client.get(self.get_building_comments_url(), headers={'Authorization': f'Bearer {self.regular_user_token}'})
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json()['error'], 'user profile not linked to building')
-
-    def test_get_all_comment_user_is_tenant(self):
-        comments = self.create_building_comments()
-        response = self.client.get(self.get_building_comments_url(), headers={'Authorization': f'Bearer {self.tenant_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_comments = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_comments), 2)
-        self.assertTrue(comments[0].pk in all_comments and comments[1].pk in all_comments)
-
-    def test_get_all_comment_user_is_owner(self):
-        comments = self.create_building_comments()
-        response = self.client.get(self.get_building_comments_url(), headers={'Authorization': f'Bearer {self.owner_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_comments = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_comments), 2)
-        self.assertTrue(comments[0].pk in all_comments and comments[1].pk in all_comments)
-
-    def test_get_all_comment_user_is_admin(self):
-        comments = self.create_building_comments()
-        response = self.client.get(self.get_building_comments_url(), headers={'Authorization': f'Bearer {self.admin_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_comments = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_comments), 2)
-        self.assertTrue(comments[0].pk in all_comments and comments[1].pk in all_comments)
-    
-    def test_get_all_comment_unexisting_building(self):
-        response = self.client.get(reverse('api-building_comments', args=[self.building_id + 1]), headers={'Authorization': f'Bearer {self.admin_token}'})
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json()['error'], 'Building does not exist')
-
-    def test_get_all_notice_unauthenticated_user(self):
-        notices = self.create_building_notices()
-        response = self.client.get(self.get_building_notices_url())
-        self.assertEqual(response.status_code, 401)
-
-    def test_get_all_notice_user_not_linked_to_building(self):
-        notices = self.create_building_notices()
-        response = self.client.get(self.get_building_notices_url(), headers={'Authorization': f'Bearer {self.regular_user_token}'})
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json()['error'], 'user profile not linked to building')
-
-    def test_get_all_notice_user_is_tenant(self):
-        notices = self.create_building_notices()
-        response = self.client.get(self.get_building_notices_url(), headers={'Authorization': f'Bearer {self.tenant_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_notices = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_notices), 2)
-        self.assertTrue(notices[0].pk in all_notices and notices[1].pk in all_notices)
-
-    def test_get_all_notice_user_is_owner(self):
-        notices = self.create_building_notices()
-        response = self.client.get(self.get_building_notices_url(), headers={'Authorization': f'Bearer {self.owner_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_notices = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_notices), 2)
-        self.assertTrue(notices[0].pk in all_notices and notices[1].pk in all_notices)
-
-    def test_get_all_notice_user_is_admin(self):
-        notices = self.create_building_notices()
-        response = self.client.get(self.get_building_notices_url(), headers={'Authorization': f'Bearer {self.admin_token}'})
-        self.assertEqual(response.status_code, 200)
-        all_notices = list(map(lambda x: x['pk'], response.json()['results']))
-        self.assertEqual(len(all_notices), 2)
-        self.assertTrue(notices[0].pk in all_notices and notices[1].pk in all_notices)
-    
-    def test_get_all_notice_unexisting_building(self):
-        response = self.client.get(reverse('api-building_notices', args=[self.building_id + 1]), headers={'Authorization': f'Bearer {self.admin_token}'})
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json()['error'], 'Building does not exist')
-    
     def test_delete_building_unauthenticated_user(self):
         response = self.client.delete(self.get_update_building_url())
         self.assertEqual(response.status_code, 401)
@@ -478,6 +378,30 @@ class TestBuildings(APITestCase):
         self.assertEqual(response.status_code, 404)
         response = self.client.delete(self.get_update_building_url(), headers={'Authorization': f'Bearer {self.owner_token}'})
         self.assertEqual(response.status_code, 404)
+    
+    def test_get_user_buildings_unauthenticated(self):
+        pass
+
+    def test_get_user_buildings_invalid_token(self):
+        pass
+
+    def test_get_user_buildings_no_query_string(self):
+        pass
+
+    def test_get_user_buildings_wrong_query_string_value(self):
+        pass
+
+    def test_get_user_buildings_authenticated(self):
+        pass
+
+    def test_get_user_buildings_authenticated_admin(self):
+        pass
+
+    def test_get_user_owned_buildings(self):
+        pass
+
+    def test_get_user_rented_buildings(self):
+        pass
 
 
 

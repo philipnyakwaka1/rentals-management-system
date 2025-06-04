@@ -15,6 +15,16 @@ TO DOs
 Implement endpoint to get all notices/comments belonging to a particular user
 """
 
+def check_permission_filter_by_building(request, building):
+    if not IsAdminUser().has_permission(request, None):
+        if not UserBuilding.objects.filter(building=building, profile=request.user.profile).exists():
+            raise PermissionDenied('user profile not linked to building')
+
+def check_permission_filter_by_user(request, user):
+    if not IsAdminUser().has_permission(request, None):
+        if request.user != user:
+            raise PermissionDenied('permission denied')
+
 @api_view(['GET', 'PUT'])
 def create_get_comment_api(request):
 
@@ -63,7 +73,7 @@ def create_get_comment_api(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def get_update_comment_api(request, comment_pk):
+def get_update_comment_api(request, comment_id):
 
     def check_permission(tenant, comment):
         if tenant != comment.tenant:
@@ -71,7 +81,7 @@ def get_update_comment_api(request, comment_pk):
     
     if request.method == 'GET':
         try:
-            comment =Comment.objects.get(pk=comment_pk)
+            comment =Comment.objects.get(pk=comment_id)
             if not IsAdminUser().has_permission(request, None):
                 check_permission(request.user, comment)
             serializer = CommentSerializer(comment)
@@ -83,10 +93,10 @@ def get_update_comment_api(request, comment_pk):
     
     if request.method == 'DELETE':
         try:
-            comment = Comment.objects.get(pk=comment_pk)
+            comment = Comment.objects.get(pk=comment_id)
             check_permission(request.user, comment)
             comment.delete()
-            return Response({'comment_id': comment_pk, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
+            return Response({'comment_id': comment_id, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
         except Comment.DoesNotExist:
             return Response({'error': 'comment id does not exist'}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied:
@@ -94,7 +104,7 @@ def get_update_comment_api(request, comment_pk):
 
     if request.method == 'PATCH':
         try:
-            comment =Comment.objects.get(pk=comment_pk)
+            comment =Comment.objects.get(pk=comment_id)
             check_permission(request.user, comment)
         except Comment.DoesNotExist:
             return Response({'error': 'comment id does not exist'}, status=status.HTTP_404_NOT_FOUND)
@@ -106,6 +116,38 @@ def get_update_comment_api(request, comment_pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def building_comments(request, building_id):
+    try:
+        building = Building.objects.get(pk=building_id)
+        check_permission_filter_by_building(request, building)
+        all_building_comments = building.comments.all()
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_building_comments, request)
+        comments = list(map(lambda x: CommentSerializer(x).data, paginated_queryset))
+        return paginator.get_paginated_response(comments)
+    except Building.DoesNotExist:
+        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_comments(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        check_permission_filter_by_user(request, user)
+        all_user_comments = Comment.objects.filter(tenant=user)
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_user_comments, request)
+        comments = list(map(lambda x: CommentSerializer(x).data, paginated_queryset))
+        return paginator.get_paginated_response(comments)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET', 'PUT'])
 def create_get_notice_api(request):
@@ -154,7 +196,7 @@ def create_get_notice_api(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
-def get_update_notice_api(request, notice_pk):
+def get_update_notice_api(request, notice_id):
 
     def check_permission(owner, notice):
         if owner != notice.owner:
@@ -162,7 +204,7 @@ def get_update_notice_api(request, notice_pk):
                 raise PermissionDenied('user not authorized to perform this action')
     if request.method == 'GET':
         try:
-            notice =Notice.objects.get(pk=notice_pk)
+            notice =Notice.objects.get(pk=notice_id)
             check_permission(request.user, notice)
             serializer = NoticeSerializer(notice)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -173,10 +215,10 @@ def get_update_notice_api(request, notice_pk):
     
     if request.method == 'DELETE':
         try:
-            notice = Notice.objects.get(pk=notice_pk)
+            notice = Notice.objects.get(pk=notice_id)
             check_permission(request.user, notice)
             notice.delete()
-            return Response({'notice_id': notice_pk, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
+            return Response({'notice_id': notice_id, 'message': 'succesfully deleted'}, status=status.HTTP_200_OK)
         except Notice.DoesNotExist:
             return Response({'error': 'notice id does not exist'}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
@@ -184,7 +226,7 @@ def get_update_notice_api(request, notice_pk):
 
     if request.method == 'PATCH':
         try:
-            notice =Notice.objects.get(pk=notice_pk)
+            notice =Notice.objects.get(pk=notice_id)
             check_permission(request.user, notice)
             serializer = NoticeSerializer(notice, data=request.data, partial=True)
             if serializer.is_valid():
@@ -195,3 +237,35 @@ def get_update_notice_api(request, notice_pk):
             return Response({'error': 'notice id does not exist'}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def building_notices(request, building_id):
+    try:
+        building = Building.objects.get(pk=building_id)
+        check_permission_filter_by_building(request, building)
+        all_building_notices = building.notices.all()
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_building_notices, request)
+        notices = list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))
+        return paginator.get_paginated_response(notices)
+    except Building.DoesNotExist:
+        return Response({'error': 'Building does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_notices(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        check_permission_filter_by_user(request, user)
+        all_user_notices = Notice.objects.filter(owner=user)
+        paginator = CustomPaginator()
+        paginated_queryset = paginator.paginate_queryset(all_user_notices, request)
+        notices = list(map(lambda x: NoticeSerializer(x).data, paginated_queryset))
+        return paginator.get_paginated_response(notices)
+    except User.DoesNotExist:
+        return Response({'error': 'user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except PermissionDenied as e:
+        return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
