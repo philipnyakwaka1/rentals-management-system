@@ -227,7 +227,7 @@ def user_buildings(request, user_pk):
     category = request.query_params.get('category')
     if category not in ['owner', 'tenant']:
         return Response(
-            {'error': "Missing or invalid 'category' query parameter. Expected 'owned' or 'rented'."},
+            {'error': "Missing or invalid 'category' query parameter. Expected 'owner' or 'tenant'."},
             status=status.HTTP_400_BAD_REQUEST)
     
     buildings = UserBuilding.objects.filter(profile=profile, relationship=category)

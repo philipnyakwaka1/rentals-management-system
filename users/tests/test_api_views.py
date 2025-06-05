@@ -379,13 +379,4 @@ class TestUserProfile(APITestCase):
         self.assertEqual(response.json()['error'], 'profile does not exist')    
 
     
-    # def test_user_buildings(self):
-    #      response = self.client.get(self.__class__.profile_buildings_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
-    #      self.assertEqual(response.status_code, 200)
-    #      self.assertEqual(len(response.json()['results']), 0)
-    #      building1 = self.client.put(self.__class__.buildings_url, data={'user_id': self.__class__.user_id, 'building': '-4.5, 33.7'},  headers={'Authorization': f'Bearer {self.__class__.access_token}'})
-    #      building2 = self.client.put(self.__class__.buildings_url, data={'user_id': self.__class__.user_id, 'building': '-2.6, 34.1'},  headers={'Authorization': f'Bearer {self.__class__.access_token}'})
-    #      response = self.client.get(self.__class__.profile_buildings_url, headers={'Authorization': f'Bearer {self.__class__.access_token}'})
-    #      self.assertEqual(response.status_code, 200)
-    #      self.assertEqual(len(response.json()['results']), 2)
     

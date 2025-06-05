@@ -26,7 +26,7 @@ def check_permission_filter_by_user(request, user):
             raise PermissionDenied('permission denied')
 
 @api_view(['GET', 'PUT'])
-def create_get_comment_api(request):
+def comment_list_create(request):
 
     def check_permission(building_id, user_id):
         try:
@@ -73,7 +73,7 @@ def create_get_comment_api(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def get_update_comment_api(request, comment_id):
+def comment_retrieve_update(request, comment_id):
 
     def check_permission(tenant, comment):
         if tenant != comment.tenant:
@@ -119,7 +119,7 @@ def get_update_comment_api(request, comment_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def building_comments(request, building_id):
+def comment_list_by_building(request, building_id):
     try:
         building = Building.objects.get(pk=building_id)
         check_permission_filter_by_building(request, building)
@@ -135,7 +135,7 @@ def building_comments(request, building_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def user_comments(request, user_id):
+def comment_list_by_user(request, user_id):
     try:
         user = User.objects.get(pk=user_id)
         check_permission_filter_by_user(request, user)
@@ -150,7 +150,7 @@ def user_comments(request, user_id):
         return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET', 'PUT'])
-def create_get_notice_api(request):
+def notice_list_create(request):
 
     def check_permission(building_id, user_id):
         try:
@@ -196,7 +196,7 @@ def create_get_notice_api(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
-def get_update_notice_api(request, notice_id):
+def notice_retrieve_update(request, notice_id):
 
     def check_permission(owner, notice):
         if owner != notice.owner:
@@ -240,7 +240,7 @@ def get_update_notice_api(request, notice_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def building_notices(request, building_id):
+def notice_list_by_building(request, building_id):
     try:
         building = Building.objects.get(pk=building_id)
         check_permission_filter_by_building(request, building)
@@ -256,7 +256,7 @@ def building_notices(request, building_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def user_notices(request, user_id):
+def notice_list_by_user(request, user_id):
     try:
         user = User.objects.get(pk=user_id)
         check_permission_filter_by_user(request, user)
