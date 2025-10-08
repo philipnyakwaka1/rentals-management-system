@@ -4,3 +4,8 @@ venv
 *.csv
 main.js
 main.py
+practice.html
+__pycache__/
+*.pyc
+filtered_valid.csv
+secret_app/

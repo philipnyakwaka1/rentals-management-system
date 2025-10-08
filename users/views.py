@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 def home_page(request):
-    return render(request, 'users/practice.html')
+    return render(request, 'users/home.html')
 
 
 def register_user(request):

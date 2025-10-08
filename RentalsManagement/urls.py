@@ -17,13 +17,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('user/', include('users.urls')),
     path('api/v1/users/', include('users.api.v1.urls')),
+    path('announcements/', include('announcements.urls')),
     path('api/v1/announcements/', include('announcements.api.v1.urls')),
     path('api/v1/building/', include('buildings.api.v1.urls')),
-    # path('', include('users.urls')),
-    # path('user/', include('users.urls')),
-    # path('announcements/', include('announcements.urls'))
+    path('buildings/', include('buildings.urls')),
 ]
+
+# Conditionally add portfolio URLs (not tracked in git)
+if os.getenv('ENABLE_PORTFOLIO_APP', 'false').lower() == 'true':
+    urlpatterns.insert(1, path('', include('portfolio.urls')))
