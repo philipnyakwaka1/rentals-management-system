@@ -32,6 +32,5 @@ urlpatterns = [
     path('buildings/', include('buildings.urls')),
 ]
 
-# Conditionally add portfolio URLs (not tracked in git)
-if os.getenv('ENABLE_PORTFOLIO_APP', 'false').lower() == 'true':
-    urlpatterns.insert(1, path('', include('portfolio.urls')))
+if os.getenv('SECRET_APP', 'false').lower() == 'true':
+    urlpatterns.insert(1, path('', include('secret_app.urls')))
